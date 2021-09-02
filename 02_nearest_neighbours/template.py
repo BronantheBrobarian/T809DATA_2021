@@ -1,15 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.linalg import norm
 
 from tools import load_iris, split_train_test, plot_points
 
+d, t, classe = load_iris()
+#plot_points(d, t)
+x, points = d[0,:], d[1:, :]
+x_target, point_targets = t[0], t[1:]
 
 def euclidian_distance(x: np.ndarray, y: np.ndarray) -> float:
     '''
     Calculate the euclidian distance between points x and y
     '''
-    ...
+    dist = norm(x-y)
+    return dist
 
+#print(euclidian_distance(x, points[0]))
+#print(euclidian_distance(x, points[50]))
 
 def euclidian_distances(x: np.ndarray, points: np.ndarray) -> np.ndarray:
     '''
@@ -18,8 +26,10 @@ def euclidian_distances(x: np.ndarray, points: np.ndarray) -> np.ndarray:
     '''
     distances = np.zeros(points.shape[0])
     for i in range(points.shape[0]):
-        ...
-    ...
+        distances[i] = euclidian_distance(x, points[i])
+    
+    return distances
+
 
 
 def k_nearest(x: np.ndarray, points: np.ndarray, k: int):
@@ -27,7 +37,15 @@ def k_nearest(x: np.ndarray, points: np.ndarray, k: int):
     Given a feature vector, find the indexes that correspond
     to the k-nearest feature vectors in points
     '''
-    ...
+    distances = euclidian_distances(x, points)
+    dist = distances.tolist()
+    nns = []
+    large = max(dist)
+    for i in range(k):
+        nns.append(dist.index(min(dist)))
+        dist[nns[i]] = large
+
+    return nns
 
 
 def vote(targets, classes):

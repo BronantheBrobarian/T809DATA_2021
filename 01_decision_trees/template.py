@@ -1,17 +1,27 @@
 from typing import Union
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 
 from tools import load_iris, split_train_test
 
+features, targets, classes = load_iris()
 
 def prior(targets: np.ndarray, classes: list) -> np.ndarray:
     '''
     Calculate the prior probability of each class type
     given a list of all targets and all class types
     '''
-    ...
+    temp = np.zeros(len(classes))
+    for i in range(len(classes)):
+        for j in range(len(targets)):
+            if targets[j] == classes[i]:
+                temp[i] += 1
+
+        if (len(targets) != 0):
+            temp[i] /= len(targets)
+    return temp
 
 
 def split_data(
@@ -24,11 +34,24 @@ def split_data(
     Split a dataset and targets into two seperate datasets
     where data with split_feature < theta goes to 1 otherwise 2
     '''
-    features_1 = features[...]
-    targets_1 = targets[...]
 
-    features_2 = features[...]
-    targets_2 = targets[...]
+    f_1 = []
+    t_1 = []
+    f_2 = []
+    t_2 = []
+
+    for i in range(len(features)):
+        if features[i, split_feature_index] <= theta:
+            f_1.append(features[i])
+            t_1.append(targets[i])
+        else:
+            f_2.append(features[i])
+            t_2.append(targets[i])
+
+    features_1 = np.array(f_1)
+    targets_1 = np.array(t_1)
+    features_2 = np.array(f_2)
+    targets_2 = np.array(t_2)
 
     return (features_1, targets_1), (features_2, targets_2)
 
@@ -38,7 +61,15 @@ def gini_impurity(targets: np.ndarray, classes: list) -> float:
     Calculate:
         i(S_k) = 1/2 * (1 - sum_i P{C_i}**2)
     '''
-    ...
+    Pc = prior(targets, classes)
+    Pc_sum = Pc[...]
+    Pc_tot = 0.0
+    for i in range(len(Pc)):
+        Pc_sum[i] = Pc[i]*Pc[i]
+        Pc_tot += Pc_sum[i]
+
+    gini = 0.5 * (1 - Pc_tot)
+    return gini
 
 
 def weighted_impurity(
@@ -50,10 +81,11 @@ def weighted_impurity(
     Given targets of two branches, return the weighted
     sum of gini branch impurities
     '''
-    g1 = gini_impurity(...)
-    g2 = gini_impurity(...)
+    g1 = gini_impurity(t1, classes)
+    g2 = gini_impurity(t2, classes)
     n = t1.shape[0] + t2.shape[0]
-    ...
+    wi = ((t1.shape[0] * g1)/n) + ((t2.shape[0] * g2)/n)
+    return wi
 
 
 def total_gini_impurity(
@@ -67,7 +99,9 @@ def total_gini_impurity(
     Calculate the gini impurity for a split on split_feature_index
     for a given dataset of features and targets.
     '''
-    ...
+    (f_1, t_1), (f_2, t_2) = split_data(features, targets, split_feature_index, theta)
+    total_gini = weighted_impurity(t_1, t_2, classes)
+    return total_gini
 
 
 def brute_best_split(
@@ -85,13 +119,20 @@ def brute_best_split(
     '''
     best_gini, best_dim, best_theta = float("inf"), None, None
     # iterate feature dimensions
-    for i in range(features.shape[1]):
+    for dim in range(features.shape[1]):
         # create the thresholds
-        thetas = ...
+        thetas = np.linspace(0, 10, num_tries+2)[1:-1]
         # iterate thresholds
         for theta in thetas:
-            ...
+            current = total_gini_impurity(features, targets, classes, dim, theta)
+            if current < best_gini:
+                best_gini = current
+                best_dim = dim
+                best_theta = theta
+
     return best_gini, best_dim, best_theta
+
+#print(brute_best_split(features, targets, classes, 30))
 
 
 class IrisTreeTrainer:
@@ -114,7 +155,7 @@ class IrisTreeTrainer:
         self.tree = DecisionTreeClassifier()
 
     def train(self):
-        ...
+        self.fit(features, targets)
 
     def accuracy(self):
         ...
@@ -132,3 +173,6 @@ class IrisTreeTrainer:
 
     def confusion_matrix(self):
         ...
+
+dt = IrisTreeTrainer(features, targets, classes=classes, train_ratio=0.6)
+dt.plot_progress()
